@@ -1,0 +1,380 @@
+import { Calendar, Clock, Plus, X, Search, Filter } from "lucide-react";
+import { useState } from "react";
+
+interface MedicalCheckup {
+  id: number;
+  doctor: string;
+  specialty: string;
+  date: string;
+  time: string;
+  location: string;
+  notes?: string;
+  status: "upcoming" | "completed" | "cancelled";
+}
+
+export function MedicalCheckupsScreen() {
+  const [checkups, setCheckups] = useState<MedicalCheckup[]>([
+    {
+      id: 1,
+      doctor: "Dr. María González",
+      specialty: "Cardiología",
+      date: "15 Abr, 2026",
+      time: "10:00 AM",
+      location: "Hospital Central",
+      notes: "Control de presión arterial",
+      status: "upcoming",
+    },
+    {
+      id: 2,
+      doctor: "Dr. Carlos Ruiz",
+      specialty: "Medicina General",
+      date: "22 Abr, 2026",
+      time: "3:30 PM",
+      location: "Clínica Santa María",
+      status: "upcoming",
+    },
+    {
+      id: 3,
+      doctor: "Dra. Ana Torres",
+      specialty: "Oftalmología",
+      date: "5 Abr, 2026",
+      time: "9:00 AM",
+      location: "Centro Médico Vista",
+      notes: "Control anual de visión",
+      status: "completed",
+    },
+  ]);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<"all" | "upcoming" | "completed">("upcoming");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [newCheckup, setNewCheckup] = useState({
+    doctor: "",
+    specialty: "",
+    date: "",
+    time: "",
+    location: "",
+    notes: "",
+  });
+
+  const handleAddCheckup = () => {
+    if (
+      newCheckup.doctor &&
+      newCheckup.specialty &&
+      newCheckup.date &&
+      newCheckup.time &&
+      newCheckup.location
+    ) {
+      const checkup: MedicalCheckup = {
+        id: Date.now(),
+        ...newCheckup,
+        status: "upcoming",
+      };
+      setCheckups([...checkups, checkup]);
+      setNewCheckup({ doctor: "", specialty: "", date: "", time: "", location: "", notes: "" });
+      setShowAddModal(false);
+    }
+  };
+
+  const handleDeleteCheckup = (id: number) => {
+    setCheckups(checkups.filter((checkup) => checkup.id !== id));
+  };
+
+  const handleCompleteCheckup = (id: number) => {
+    setCheckups(
+      checkups.map((checkup) =>
+        checkup.id === id ? { ...checkup, status: "completed" as const } : checkup
+      )
+    );
+  };
+
+  const filteredCheckups = checkups.filter((checkup) => {
+    const matchesStatus = filterStatus === "all" || checkup.status === filterStatus;
+    const matchesSearch =
+      checkup.doctor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      checkup.specialty.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  const upcomingCount = checkups.filter((c) => c.status === "upcoming").length;
+  const completedCount = checkups.filter((c) => c.status === "completed").length;
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Header Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
+          <p className="text-sm text-blue-100">Próximos</p>
+          <p className="text-3xl mt-1">{upcomingCount}</p>
+        </div>
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
+          <p className="text-sm text-green-100">Completados</p>
+          <p className="text-3xl mt-1">{completedCount}</p>
+        </div>
+      </div>
+
+      {/* Search and Filter */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por médico o especialidad..."
+            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-gray-500" />
+          <div className="flex gap-2 flex-1">
+            <button
+              onClick={() => setFilterStatus("all")}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                filterStatus === "all"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 border border-gray-200"
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setFilterStatus("upcoming")}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                filterStatus === "upcoming"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 border border-gray-200"
+              }`}
+            >
+              Próximos
+            </button>
+            <button
+              onClick={() => setFilterStatus("completed")}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                filterStatus === "completed"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 border border-gray-200"
+              }`}
+            >
+              Completados
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Button */}
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="w-full bg-blue-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-md"
+      >
+        <Plus className="w-5 h-5" />
+        <span>Agregar control médico</span>
+      </button>
+
+      {/* Checkups List */}
+      <div className="space-y-3 pb-4">
+        {filteredCheckups.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 text-center">
+            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">No hay controles para mostrar</p>
+          </div>
+        ) : (
+          filteredCheckups.map((checkup) => (
+            <div
+              key={checkup.id}
+              className={`bg-white rounded-2xl p-4 shadow-sm border transition-all ${
+                checkup.status === "completed"
+                  ? "border-green-200 bg-green-50/30"
+                  : "border-gray-200"
+              }`}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-base">{checkup.doctor}</p>
+                    {checkup.status === "completed" && (
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                        Completado
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">{checkup.specialty}</p>
+                </div>
+                <button
+                  onClick={() => handleDeleteCheckup(checkup.id)}
+                  className="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span>{checkup.date}</span>
+                  <span className="text-gray-300">|</span>
+                  <Clock className="w-4 h-4" />
+                  <span>{checkup.time}</span>
+                </div>
+                <p className="text-sm text-gray-600">{checkup.location}</p>
+                {checkup.notes && (
+                  <p className="text-sm text-gray-500 italic mt-2 pt-2 border-t border-gray-100">
+                    {checkup.notes}
+                  </p>
+                )}
+              </div>
+
+              {checkup.status === "upcoming" && (
+                <button
+                  onClick={() => handleCompleteCheckup(checkup.id)}
+                  className="w-full mt-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-sm"
+                >
+                  Marcar como completado
+                </button>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Add Checkup Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl text-gray-900">Nuevo control médico</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Nombre del médico *
+                </label>
+                <input
+                  type="text"
+                  value={newCheckup.doctor}
+                  onChange={(e) =>
+                    setNewCheckup({
+                      ...newCheckup,
+                      doctor: e.target.value,
+                    })
+                  }
+                  placeholder="Ej: Dr. Juan Pérez"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Especialidad *
+                </label>
+                <input
+                  type="text"
+                  value={newCheckup.specialty}
+                  onChange={(e) =>
+                    setNewCheckup({
+                      ...newCheckup,
+                      specialty: e.target.value,
+                    })
+                  }
+                  placeholder="Ej: Cardiología"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">Fecha *</label>
+                <input
+                  type="text"
+                  value={newCheckup.date}
+                  onChange={(e) =>
+                    setNewCheckup({
+                      ...newCheckup,
+                      date: e.target.value,
+                    })
+                  }
+                  placeholder="Ej: 15 May, 2026"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">Hora *</label>
+                <input
+                  type="text"
+                  value={newCheckup.time}
+                  onChange={(e) =>
+                    setNewCheckup({
+                      ...newCheckup,
+                      time: e.target.value,
+                    })
+                  }
+                  placeholder="Ej: 10:00 AM"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Ubicación *
+                </label>
+                <input
+                  type="text"
+                  value={newCheckup.location}
+                  onChange={(e) =>
+                    setNewCheckup({
+                      ...newCheckup,
+                      location: e.target.value,
+                    })
+                  }
+                  placeholder="Ej: Hospital Central"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Notas (opcional)
+                </label>
+                <textarea
+                  value={newCheckup.notes}
+                  onChange={(e) =>
+                    setNewCheckup({
+                      ...newCheckup,
+                      notes: e.target.value,
+                    })
+                  }
+                  placeholder="Ej: Llevar exámenes previos"
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddCheckup}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

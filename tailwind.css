@@ -1,0 +1,807 @@
+import {
+  User,
+  Bell,
+  Shield,
+  HelpCircle,
+  LogOut,
+  ChevronRight,
+  Phone,
+  Mail,
+  Calendar,
+  Heart,
+  Lock,
+  Trash2,
+  AlertTriangle,
+  Key,
+  Download,
+} from "lucide-react";
+import { useState } from "react";
+
+export function ProfileScreen() {
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [userData, setUserData] = useState({
+    name: "María Rodríguez",
+    email: "maria.rodriguez@email.com",
+    phone: "+56 9 8765 4321",
+    birthDate: "15 de Marzo, 1985",
+    bloodType: "O+",
+  });
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryStep, setRecoveryStep] = useState<"email" | "code" | "password">("email");
+  const [editData, setEditData] = useState(userData);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [recoveryData, setRecoveryData] = useState({
+    email: "",
+    code: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  const handleSaveProfile = () => {
+    setUserData(editData);
+    setShowEditModal(false);
+  };
+
+  const handleChangePassword = () => {
+    if (passwordData.newPassword === passwordData.confirmPassword) {
+      alert("Contraseña actualizada exitosamente");
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setShowPasswordModal(false);
+    } else {
+      alert("Las contraseñas no coinciden");
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (deleteConfirmText === "ELIMINAR") {
+      alert("Cuenta eliminada. Serás redirigido al inicio de sesión.");
+      setShowDeleteModal(false);
+    } else {
+      alert("Debes escribir 'ELIMINAR' para confirmar");
+    }
+  };
+
+  const handleExportData = () => {
+    const dataToExport = {
+      userData,
+      exportDate: new Date().toISOString(),
+      notificationsEnabled,
+    };
+    const dataStr = JSON.stringify(dataToExport, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "cuidapp-datos-personales.json";
+    link.click();
+    URL.revokeObjectURL(url);
+    alert("Tus datos han sido descargados exitosamente");
+  };
+
+  const handleSendRecoveryCode = () => {
+    if (recoveryData.email) {
+      alert(`Código de verificación enviado a ${recoveryData.email}`);
+      setRecoveryStep("code");
+    } else {
+      alert("Por favor ingresa tu correo electrónico");
+    }
+  };
+
+  const handleVerifyCode = () => {
+    if (recoveryData.code === "123456") {
+      setRecoveryStep("password");
+    } else if (recoveryData.code) {
+      alert("Código incorrecto. Intenta nuevamente. (Usa: 123456)");
+    } else {
+      alert("Por favor ingresa el código de verificación");
+    }
+  };
+
+  const handleResetPassword = () => {
+    if (recoveryData.newPassword === recoveryData.confirmPassword) {
+      alert("Contraseña restablecida exitosamente");
+      setShowRecoveryModal(false);
+      setRecoveryStep("email");
+      setRecoveryData({
+        email: "",
+        code: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } else {
+      alert("Las contraseñas no coinciden");
+    }
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Profile Header */}
+      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center border-4 border-white/30">
+            <User className="w-10 h-10" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl">{userData.name}</h2>
+            <p className="text-blue-100 text-sm mt-1">{userData.email}</p>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            setEditData(userData);
+            setShowEditModal(true);
+          }}
+          className="w-full mt-4 bg-white/20 hover:bg-white/30 text-white px-4 py-3 rounded-xl transition-colors"
+        >
+          Editar perfil
+        </button>
+      </div>
+
+      {/* Personal Info */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <h3 className="text-lg text-gray-900 mb-4">Información personal</h3>
+        <div className="space-y-3">
+          <InfoItem
+            icon={<Phone className="w-5 h-5" />}
+            label="Teléfono"
+            value={userData.phone}
+          />
+          <InfoItem
+            icon={<Calendar className="w-5 h-5" />}
+            label="Fecha de nacimiento"
+            value={userData.birthDate}
+          />
+          <InfoItem
+            icon={<Heart className="w-5 h-5" />}
+            label="Tipo de sangre"
+            value={userData.bloodType}
+          />
+        </div>
+      </div>
+
+      {/* Settings */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <h3 className="text-lg text-gray-900 mb-4">Configuración</h3>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                <Bell className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-900">Notificaciones</p>
+                <p className="text-xs text-gray-500">
+                  Recordatorios de medicamentos
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+              className={`w-12 h-7 rounded-full transition-colors relative ${
+                notificationsEnabled ? "bg-blue-600" : "bg-gray-300"
+              }`}
+            >
+              <div
+                className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
+                  notificationsEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          <SettingsItem
+            icon={<Shield className="w-5 h-5" />}
+            label="Privacidad y seguridad"
+            description="Gestiona tus datos"
+            onClick={() => {}}
+          />
+          <SettingsItem
+            icon={<HelpCircle className="w-5 h-5" />}
+            label="Ayuda y soporte"
+            description="Centro de ayuda"
+            onClick={() => {}}
+          />
+        </div>
+      </div>
+
+      {/* Account Management */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <h3 className="text-lg text-gray-900 mb-4">Gestión de cuenta</h3>
+        <div className="space-y-1">
+          <SettingsItem
+            icon={<Key className="w-5 h-5" />}
+            label="Cambiar contraseña"
+            description="Actualiza tu contraseña"
+            onClick={() => setShowPasswordModal(true)}
+          />
+          <SettingsItem
+            icon={<Mail className="w-5 h-5" />}
+            label="Recuperar contraseña"
+            description="Olvidé mi contraseña"
+            onClick={() => setShowRecoveryModal(true)}
+          />
+          <SettingsItem
+            icon={<Lock className="w-5 h-5" />}
+            label="Autenticación de dos factores"
+            description="Seguridad adicional"
+            onClick={() => {}}
+          />
+          <SettingsItem
+            icon={<Download className="w-5 h-5" />}
+            label="Descargar mis datos"
+            description="Exportar información personal"
+            onClick={handleExportData}
+          />
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="w-full flex items-center justify-between p-3 hover:bg-red-50 rounded-xl transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm text-red-900">Eliminar cuenta</p>
+                <p className="text-xs text-red-500">
+                  Acción permanente e irreversible
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-red-400" />
+          </button>
+        </div>
+      </div>
+
+      {/* Emergency Contact */}
+      <div className="bg-red-50 rounded-2xl p-5 border border-red-200">
+        <h3 className="text-base text-red-900 mb-3">Contacto de emergencia</h3>
+        <div className="space-y-2">
+          <p className="text-sm text-red-800">Ana Rodríguez (Hermana)</p>
+          <p className="text-sm text-red-700">+56 9 1234 5678</p>
+          <button className="text-sm text-red-600 hover:text-red-700 underline">
+            Editar contacto
+          </button>
+        </div>
+      </div>
+
+      {/* Logout */}
+      <button className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-red-600 px-4 py-3 rounded-xl hover:bg-red-50 transition-colors">
+        <LogOut className="w-5 h-5" />
+        <span>Cerrar sesión</span>
+      </button>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl text-gray-900">Cambiar contraseña</h3>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Contraseña actual
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) =>
+                    setPasswordData({
+                      ...passwordData,
+                      currentPassword: e.target.value,
+                    })
+                  }
+                  placeholder="Ingresa tu contraseña actual"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Nueva contraseña
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) =>
+                    setPasswordData({
+                      ...passwordData,
+                      newPassword: e.target.value,
+                    })
+                  }
+                  placeholder="Mínimo 8 caracteres"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Confirmar nueva contraseña
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordData({
+                      ...passwordData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  placeholder="Repite la nueva contraseña"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+              <p className="text-xs text-blue-800">
+                La contraseña debe tener al menos 8 caracteres, incluir
+                mayúsculas, minúsculas y números.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowPasswordModal(false);
+                setShowRecoveryModal(true);
+              }}
+              className="text-sm text-blue-600 hover:text-blue-700 text-center underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleChangePassword}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                Actualizar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Recovery Modal */}
+      {showRecoveryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl text-gray-900">Recuperar contraseña</h3>
+              <button
+                onClick={() => {
+                  setShowRecoveryModal(false);
+                  setRecoveryStep("email");
+                  setRecoveryData({
+                    email: "",
+                    code: "",
+                    newPassword: "",
+                    confirmPassword: "",
+                  });
+                }}
+                className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Step 1: Email */}
+            {recoveryStep === "email" && (
+              <>
+                <div className="space-y-3">
+                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                    <p className="text-sm text-blue-800">
+                      Ingresa tu correo electrónico y te enviaremos un código
+                      de verificación para restablecer tu contraseña.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-700 mb-1 block">
+                      Correo electrónico
+                    </label>
+                    <input
+                      type="email"
+                      value={recoveryData.email}
+                      onChange={(e) =>
+                        setRecoveryData({
+                          ...recoveryData,
+                          email: e.target.value,
+                        })
+                      }
+                      placeholder="tu@email.com"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSendRecoveryCode}
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  Enviar código
+                </button>
+              </>
+            )}
+
+            {/* Step 2: Verification Code */}
+            {recoveryStep === "code" && (
+              <>
+                <div className="space-y-3">
+                  <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                    <p className="text-sm text-green-800">
+                      ✓ Código enviado a {recoveryData.email}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-700 mb-1 block">
+                      Código de verificación
+                    </label>
+                    <input
+                      type="text"
+                      value={recoveryData.code}
+                      onChange={(e) =>
+                        setRecoveryData({
+                          ...recoveryData,
+                          code: e.target.value,
+                        })
+                      }
+                      placeholder="Ingresa el código de 6 dígitos"
+                      maxLength={6}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl tracking-widest"
+                    />
+                  </div>
+
+                  <div className="text-center">
+                    <button
+                      onClick={handleSendRecoveryCode}
+                      className="text-sm text-blue-600 hover:text-blue-700 underline"
+                    >
+                      Reenviar código
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setRecoveryStep("email")}
+                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                  >
+                    Atrás
+                  </button>
+                  <button
+                    onClick={handleVerifyCode}
+                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                  >
+                    Verificar
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Step 3: New Password */}
+            {recoveryStep === "password" && (
+              <>
+                <div className="space-y-3">
+                  <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                    <p className="text-sm text-green-800">
+                      ✓ Código verificado correctamente
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-700 mb-1 block">
+                      Nueva contraseña
+                    </label>
+                    <input
+                      type="password"
+                      value={recoveryData.newPassword}
+                      onChange={(e) =>
+                        setRecoveryData({
+                          ...recoveryData,
+                          newPassword: e.target.value,
+                        })
+                      }
+                      placeholder="Mínimo 8 caracteres"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-gray-700 mb-1 block">
+                      Confirmar nueva contraseña
+                    </label>
+                    <input
+                      type="password"
+                      value={recoveryData.confirmPassword}
+                      onChange={(e) =>
+                        setRecoveryData({
+                          ...recoveryData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      placeholder="Repite la nueva contraseña"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleResetPassword}
+                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  Restablecer contraseña
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-xl text-gray-900">Eliminar cuenta</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                }}
+                className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                <h4 className="text-sm text-red-900 mb-2">
+                  ⚠️ Esta acción es irreversible
+                </h4>
+                <ul className="space-y-1 text-xs text-red-800">
+                  <li>• Se eliminarán todos tus datos personales</li>
+                  <li>• Perderás tu historial de medicamentos</li>
+                  <li>• Se cancelarán todos tus controles médicos</li>
+                  <li>• No podrás recuperar esta información</li>
+                </ul>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-2 block">
+                  Para confirmar, escribe{" "}
+                  <span className="font-medium text-red-600">ELIMINAR</span>
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Escribe ELIMINAR"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText("");
+                }}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== "ELIMINAR"}
+                className={`flex-1 px-4 py-3 rounded-xl transition-colors ${
+                  deleteConfirmText === "ELIMINAR"
+                    ? "bg-red-600 text-white hover:bg-red-700"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                Eliminar cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl text-gray-900">Editar perfil</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="w-8 h-8 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Nombre completo
+                </label>
+                <input
+                  type="text"
+                  value={editData.name}
+                  onChange={(e) =>
+                    setEditData({ ...editData, name: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) =>
+                    setEditData({ ...editData, email: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Teléfono
+                </label>
+                <input
+                  type="tel"
+                  value={editData.phone}
+                  onChange={(e) =>
+                    setEditData({ ...editData, phone: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Fecha de nacimiento
+                </label>
+                <input
+                  type="text"
+                  value={editData.birthDate}
+                  onChange={(e) =>
+                    setEditData({ ...editData, birthDate: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 mb-1 block">
+                  Tipo de sangre
+                </label>
+                <select
+                  value={editData.bloodType}
+                  onChange={(e) =>
+                    setEditData({ ...editData, bloodType: e.target.value })
+                  }
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InfoItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+      <div className="text-gray-600">{icon}</div>
+      <div className="flex-1">
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-sm text-gray-900 mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function SettingsItem({
+  icon,
+  label,
+  description,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center">
+          {icon}
+        </div>
+        <div className="text-left">
+          <p className="text-sm text-gray-900">{label}</p>
+          <p className="text-xs text-gray-500">{description}</p>
+        </div>
+      </div>
+      <ChevronRight className="w-5 h-5 text-gray-400" />
+    </button>
+  );
+}
